@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Traditional Healthcare Advisory</title>
+<link rel="icon" href="assets/logo.svg">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">
+      <img src="assets/logo.svg" alt="logo">
+      <div>Traditional Healthcare Advisory
+        <small>Ayurveda • Homeopathy • Wellness</small>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="a11y-toggle no-print" onclick="toggleA11y()" aria-label="Toggle high contrast mode" title="High contrast">🌓</button>
+      <div class="nav-user" id="navUser"></div>
+    </div>
+  </div>
+
+  <main>
+    <section class="hero">
+      <h1>Traditional Healthcare Advisory</h1>
+      <p class="tagline">Search a symptom, discover likely conditions, and get Ayurvedic & Homeopathic guidance.</p>
+      <span class="greeting" id="greeting"></span>
+    </section>
+
+    <div class="chip-row" id="chipRow"></div>
+
+    <div class="search-wrap">
+      <form class="search-box" id="searchForm">
+        <input type="text" id="searchInput" placeholder="Type a symptom e.g. headache, stomach pain, skin rash...">
+        <button type="button" class="mic-btn" id="micBtn" aria-label="Speak your symptom">🎙️</button>
+        <button type="submit">Search</button>
+      </form>
+      <div class="mic-status" id="micStatus" style="display:none;"></div>
+    </div>
+
+    <div class="camera-row no-print">
+      <label class="btn-secondary camera-btn">
+        📷 <span id="takePhotoLabel">Take Photo</span>
+        <input type="file" accept="image/*" capture="environment" id="cameraInput" hidden>
+      </label>
+      <label class="btn-secondary camera-btn">
+        🖼️ <span id="uploadGalleryLabel">Upload from Gallery</span>
+        <input type="file" accept="image/*" id="galleryInput" hidden>
+      </label>
+    </div>
+    <img id="photoPreview" alt="Selected photo preview" style="display:none;">
+    <p class="photo-note no-print" id="photoNote" style="display:none;">
+      Photo saved for this visit. Image-based condition analysis needs a paid AI vision service and isn't included in this free build.
+    </p>
+  </main>
+
+  <footer>
+    Educational information only — not a medical diagnosis. Always consult a qualified practitioner.
+  </footer>
+
+  <script src="js/translations.js"></script>
+  <script src="js/voice.js"></script>
+  <script src="js/media.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

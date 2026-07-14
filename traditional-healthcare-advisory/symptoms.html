@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Symptom Results — Traditional Healthcare Advisory</title>
+<link rel="icon" href="assets/logo.svg">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="brand">
+      <img src="assets/logo.svg" alt="logo">
+      <div>Traditional Healthcare Advisory
+        <small>Ayurveda • Homeopathy • Wellness</small>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="a11y-toggle no-print" onclick="toggleA11y()" aria-label="Toggle high contrast mode" title="High contrast">🌓</button>
+      <div class="nav-user" id="navUser"></div>
+    </div>
+  </div>
+
+  <main>
+    <div class="page-head">
+      <a class="back-link" href="index.html">← Back to Home</a>
+      <h2><span id="symptomIcon">🔎</span> <span id="symptomTitle">Results</span></h2>
+      <p>Ranked by how closely each condition matches this symptom. Tap one to see full care details.</p>
+    </div>
+
+    <div class="result-list" id="resultList"></div>
+
+    <div class="empty-state" id="emptyState" style="display:none;">
+      <div class="big">🙁</div>
+      No matching conditions found. Try another symptom keyword, e.g. "headache" or "stomach pain".
+    </div>
+  </main>
+
+  <footer>Match percentages are illustrative guidance, not a clinical diagnosis.</footer>
+
+  <script src="js/translations.js"></script>
+  <script src="js/voice.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/symptoms.js"></script>
+</body>
+</html>
