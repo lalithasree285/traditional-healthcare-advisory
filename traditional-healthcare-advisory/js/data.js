@@ -448,41 +448,122 @@ const CATEGORY_KEYWORDS = {
   "hiccups":           ["हिचकी","ఎక్కిళ్ళు","விக்கல்","ಬಿಕ್ಕಳಿಕೆ","കിക്ക്"]
 };
 
-/* Checks the raw (non-lowercased) query against the multilingual
-   keyword map above. Indic scripts don't have a case concept, so we
-   deliberately avoid .toLowerCase() mangling them and just do a
-   substring check either direction. */
+/* ============================================================
+   ROMANIZED SYMPTOM KEYWORDS (free tier)
+   People very often type or speak Indian-language symptoms using
+   English letters — phonetic spelling — rather than the native
+   script (e.g. "thalanoppi" instead of "తలనొప్పి" for headache).
+   Voice recognition set to listen in English also tends to
+   transcribe non-English speech this way.
+
+   Unlike the native-script map above, a romanized word gives no
+   script-based clue about which language it is (it's just Latin
+   letters) — so each word here is tagged with its language (hi/
+   te/ta/kn/ml) explicitly. That tag is what lets the site switch
+   its narration language to match what the person actually said,
+   even when it was transcribed in English letters.
+
+   Best-effort phonetic spellings, not reviewed by a native
+   speaker — please have someone fluent check/extend these.
+   ============================================================ */
+const ROMANIZED_KEYWORDS = {
+  "head-pain":         { hi:["sar dard","sir dard"], te:["thalanoppi","thala noppi"], ta:["thalaivali","thalai vali"], kn:["tale novu"], ml:["thalavedana"] },
+  "dizziness":         { hi:["chakkar"], te:["thala tirugudam"], ta:["thalaichuttal"], kn:["tale tirugu"], ml:["thalakarakkam"] },
+  "sore-throat":       { hi:["gale mein kharash","gala dard"], te:["gontu noppi"], ta:["thondai vali"], kn:["gantalu novu"], ml:["thondavedana"] },
+  "stomach-pain":      { hi:["pet dard"], te:["kadupu noppi"], ta:["vayiru vali"], kn:["hotte novu"], ml:["vayaru vedana"] },
+  "acidity-heartburn": { hi:["acidity","seene mein jalan"], te:["gundello manta"], ta:["nenjerichal"], kn:["edeyuri"], ml:["nenjerichil"] },
+  "nausea-vomiting":   { hi:["ulti","jee michlana"], te:["vantulu"], ta:["vaandhi"], kn:["vaanti"], ml:["chardi"] },
+  "diarrhea":          { hi:["dast"], te:["virechanalu"], ta:["vayitrupokku"], kn:["bhedi"], ml:["vayarilakkam"] },
+  "constipation":      { hi:["kabj"], te:["malabaddhakam"], ta:["malachikkal"], kn:["malabaddhate"], ml:["malabandham"] },
+  "skin-rash":         { hi:["khujli","twacha par chakatte"], te:["charmam paina dadurlu","durada"], ta:["thol arippu"], kn:["charmada daddu","turike"], ml:["chorichil"] },
+  "acne":              { hi:["muhase"], te:["motimalu"], ta:["mugaparu"], kn:["modave"], ml:["mukhakkuru"] },
+  "hair-scalp":        { hi:["baal jhadna"], te:["juttu raladam"], ta:["mudi udhirthal"], kn:["koodalu uduruvike"], ml:["mudi kozhichil"] },
+  "body-pain":         { hi:["sharir mein dard"], te:["sharira noppulu"], ta:["udal vali"], kn:["mayikai novu"], ml:["shareeravedana"] },
+  "joint-neck-pain":   { hi:["jodo ka dard","gardan dard"], te:["keellu noppulu","nadumu noppi"], ta:["moottu vali"], kn:["kilu novu"], ml:["sandhivedana"] },
+  "fever-cold":        { hi:["bukhar","jukam","khansi"], te:["jwaram","jalubu","daggu"], ta:["kaichal","sali","irumal"], kn:["jwara","sheeta","kemmu"], ml:["pani","jaladosham","chuma"] },
+  "fatigue":           { hi:["thakan","kamzori"], te:["alasata","balaheenata"], ta:["sorvu","palaveenam"], kn:["aayasa","dourbalya"], ml:["kshinam"] },
+  "sleep-stress":      { hi:["neend na aana","tanav"], te:["nidra lekapovadam","ottidi"], ta:["thookkaminmai","mana azhutham"], kn:["nidre illadiruvudu","ottada"], ml:["urakkamillayma","sammardham"] },
+  "menstrual":         { hi:["periods dard","masik dharm dard"], te:["periods noppi"], ta:["mathavidai vali"], kn:["rutuchakra novu"], ml:["arthava vedana"] },
+  "hangover":          { hi:["hangover"] },
+  "eye":               { hi:["aankhon mein jalan"], te:["kallalo manta"], ta:["kan erichal"], kn:["kannina uri"], ml:["kannil pukachal"] },
+  "ear":               { hi:["kaan mein dard"], te:["chevi noppi"], ta:["kaadhu vali"], kn:["kivi novu"], ml:["chevivedana"] },
+  "tooth-breath":      { hi:["daant dard"], te:["panti noppi"], ta:["pal vali"], kn:["hallu novu"], ml:["palluvedana"] },
+  "nose-sneeze":       { hi:["naak band","cheenk"], te:["mukku dibbeda","tummulu"], ta:["mookadaippu","thummal"], kn:["moogu kattuvike","seenu"], ml:["mookadappu","thummal"] },
+  "minor-injury":      { hi:["chot"], te:["gayam"], ta:["kaayam"], kn:["gaaya"], ml:["muriv"] },
+  "numbness":          { hi:["sunnapan"], te:["thimmiri"], ta:["marathuppodhal"], kn:["jomu"], ml:["maravippu"] },
+  "dry-skin":          { hi:["rukhi twacha"], te:["podi charmam"], ta:["varanda thol"], kn:["ona charma"], ml:["varanda charmam"] },
+  "appetite":          { hi:["bhookh na lagna"], te:["aakali lekapovadam"], ta:["pasiyinmai"], kn:["hasivilladiruvudu"], ml:["vishappillayma"] },
+  "hiccups":           { hi:["hichki"], te:["ekkillu"], ta:["vikkal"], kn:["bikkalike"], ml:["kikku"] }
+};
+
+/* Checks the query against the native-script keyword map, and
+   returns the category (language is inferred separately, from the
+   script of the raw text itself — see searchDiseases). */
 function matchMultilingualCategory(rawQuery){
-  const q = String(rawQuery || "").trim();
+  const q = String(rawQuery || "").trim().toLowerCase();
   if(!q) return null;
   for(const key in CATEGORY_KEYWORDS){
-    const phrases = CATEGORY_KEYWORDS[key];
-    if(phrases.some(p => q.includes(p) || p.includes(q))){
+    if(CATEGORY_KEYWORDS[key].some(p => q.includes(p.toLowerCase()) || p.toLowerCase().includes(q))){
       return getCategoryByKey(key);
     }
   }
   return null;
 }
 
+/* Checks the query against the romanized keyword map. Unlike native
+   script, a Latin-letter word carries no clue about its language on
+   its own — so this returns BOTH the matched category AND the
+   language tag the matching word was filed under, e.g.
+   { category: {...Stomach Pain...}, lang: "te" } for "kadupu noppi". */
+function matchRomanizedCategory(rawQuery){
+  const q = String(rawQuery || "").trim().toLowerCase();
+  if(!q) return null;
+  for(const key in ROMANIZED_KEYWORDS){
+    const byLang = ROMANIZED_KEYWORDS[key];
+    for(const lang in byLang){
+      if(byLang[lang].some(p => q.includes(p) || p.includes(q))){
+        return { category: getCategoryByKey(key), lang };
+      }
+    }
+  }
+  return null;
+}
+
 /* Free-text search fallback used when the typed query doesn't match a
-   category label exactly - scores diseases by keyword overlap. */
+   category label exactly - scores diseases by keyword overlap.
+   Also returns `lang` — the detected language of the query, when we
+   can tell — so the caller can switch the site's narration to match
+   what the person actually typed/spoke. */
 function searchDiseases(query){
   const rawQuery = String(query || "").trim();
   const q = rawQuery.toLowerCase();
   if(!q) return null;
 
-  // 0) multilingual keyword match (Hindi/Telugu/Tamil/Kannada/Malayalam)
-  //    — must run on the raw (non-lowercased) text, since lowercasing
-  //    non-Latin scripts is a no-op but we want to be safe either way
+  // 0a) native-script keyword match (Hindi/Telugu/Tamil/Kannada/Malayalam
+  //     typed or spoken directly in their own script). The language is
+  //     inferred straight from the script of the raw text itself.
   const mlCat = matchMultilingualCategory(rawQuery);
   if(mlCat){
-    return { label: mlCat.label, icon: mlCat.icon, results: mlCat.items.map(([id,percent]) => ({id,percent})) };
+    const lang = (typeof detectLanguageFromText === "function") ? detectLanguageFromText(rawQuery) : null;
+    return { label: mlCat.label, icon: mlCat.icon, results: mlCat.items.map(([id,percent]) => ({id,percent})), lang };
+  }
+
+  // 0b) romanized keyword match (Indian-language words spelled in
+  //     English letters, e.g. "thalanoppi" or "kadupu noppi" — common
+  //     when typing without a native keyboard, or when speech
+  //     recognition transcribes non-English speech phonetically).
+  //     The language tag comes from which language's list the word
+  //     was found under, since Latin letters alone don't tell us.
+  const romanized = matchRomanizedCategory(rawQuery);
+  if(romanized){
+    const cat = romanized.category;
+    return { label: cat.label, icon: cat.icon, results: cat.items.map(([id,percent]) => ({id,percent})), lang: romanized.lang };
   }
 
   // 1) direct category label match
   const cat = CATEGORIES.find(c => c.label.toLowerCase().includes(q) || q.includes(c.label.toLowerCase()));
   if(cat){
-    return { label: cat.label, icon: cat.icon, results: cat.items.map(([id,percent]) => ({id,percent})) };
+    return { label: cat.label, icon: cat.icon, results: cat.items.map(([id,percent]) => ({id,percent})), lang: "en" };
   }
 
   // 2) keyword scoring across all disease names + symptom text
@@ -501,5 +582,5 @@ function searchDiseases(query){
   const total = scored.reduce((s,x) => s + x.score, 0);
   let results = scored.map(x => ({id: x.d.id, percent: Math.round(x.score/total*100)}));
   // normalize rounding so it reads cleanly (sorted desc already)
-  return { label: query, icon: "🔎", results };
+  return { label: query, icon: "🔎", results, lang: "en" };
 }

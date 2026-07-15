@@ -23,7 +23,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   } else if(q){
     const found = searchDiseases(q);
-    if(found){ label = found.label; icon = found.icon; results = found.results; }
+    if(found){
+      label = found.label; icon = found.icon; results = found.results;
+      // This catches romanized input (e.g. "thalanoppi") that the
+      // earlier script-based check above couldn't identify, since it
+      // knows exactly which language's word list matched.
+      if(found.lang) setDetectedLanguage(found.lang);
+    }
     else { label = q; }
   }
 
