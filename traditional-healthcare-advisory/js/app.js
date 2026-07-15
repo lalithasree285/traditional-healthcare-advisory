@@ -1,93 +1,167 @@
-/* ============================================================
-   Traditional Healthcare Advisory — HOME PAGE LOGIC
-   ============================================================ */
+/* app.js — ఇది కేవలం హోమ్ పేజీ (index.html) లో మాత్రమే వాడబడుతుంది.
+   వాయిస్ ఫీచర్ ఇక్కడ మాత్రమే ఉంటుంది — ఇతర పేజీలలో వాయిస్ కోడ్ ఉండదు. */
 
-document.addEventListener("DOMContentLoaded", () => {
-  renderNavUser(document.getElementById("navUser"));
+const micBtn = document.getElementById("micBtn");
+const statusEl = document.getElementById("status");
+const promptEl = document.getElementById("promptText");
+const textInput = document.getElementById("textInput");
+const askBtn = document.getElementById("askBtn");
+const detectedBox = document.getElementById("detectedBox");
+const resultsEl = document.getElementById("results");
+const langToggle = document.getElementById("langToggle");
 
-  const user = getCurrentUser();
-  const greetEl = document.getElementById("greeting");
-  if(user){
-    greetEl.textContent = `${greetingWord()}, ${user.name}! 🌿`;
-    greetEl.style.display = "inline-block";
-  } else {
-    greetEl.style.display = "none";
-  }
+// హోమ్ పేజీలో మాత్రమే: వాయిస్ రికగ్నిషన్ భాష (డిఫాల్ట్ తెలుగు).
+// దీన్ని English కి మార్చుకునే అవకాశం ఇక్కడ మాత్రమే ఉంటుంది.
+let recognitionLang = "te-IN";
 
-  // Render quick-pick symptom chips, each with a small speaker icon
-  const chipRow = document.getElementById("chipRow");
-  chipRow.innerHTML = HOME_QUICK_SYMPTOMS.map(key => {
-    const cat = getCategoryByKey(key);
-    return `
-      <a class="chip" href="symptoms.html?cat=${cat.key}">
-        <span>${cat.icon}</span> ${cat.label}
-        <button type="button" class="speaker-btn chip-speaker" aria-label="Listen">🔊</button>
-      </a>
-    `;
-  }).join("");
-  chipRow.querySelectorAll(".chip").forEach(chip => {
-    const label = chip.textContent.replace("🔊", "").trim();
-    const spk = chip.querySelector(".chip-speaker");
-    attachSpeaker(spk, `If you have symptoms matching ${label}, please choose this category.`);
+// ప్రధాన TTS ప్రాంప్ట్ — ఎప్పుడూ తెలుగులోనే మాట్లాడుతుంది
+function speakTelugu(text) {
+  if (!("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "te-IN";
+  utter.rate = 0.95;
+  const voices = window.speechSynthesis.getVoices();
+  const teluguVoice = voices.find((v) => v.lang && v.lang.toLowerCase().startsWith("te"));
+  if (teluguVoice) utter.voice = teluguVoice;
+  window.speechSynthesis.speak(utter);
+}
+
+function askForSymptoms() {
+  const msg = "దయచేసి మీ లక్షణాలు చెప్పండి";
+  promptEl.textContent = msg;
+  speakTelugu(msg);
+}
+
+window.addEventListener("load", () => {
+  // కొన్ని బ్రౌజర్లలో వాయిస్ లిస్ట్ ఆలస్యంగా లోడ్ అవుతుంది
+  window.speechSynthesis.onvoiceschanged = () => {};
+  askForSymptoms();
+});
+
+// హోమ్ పేజీలో మాత్రమే: తెలుగు / English రికగ్నిషన్ మార్చుకునే టోగుల్
+if (langToggle) {
+  langToggle.addEventListener("click", () => {
+    recognitionLang = recognitionLang === "te-IN" ? "en-IN" : "te-IN";
+    langToggle.textContent =
+      recognitionLang === "te-IN" ? "🎙️ తెలుగు (English కి మార్చండి)" : "🎙️ English (తెలుగుకి మార్చండి)";
   });
+}
 
-  // Search bar
-  const form = document.getElementById("searchForm");
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const q = document.getElementById("searchInput").value.trim();
-    if(!q) return;
-    updateLanguageFromInput(q);
-    window.location.href = `symptoms.html?q=${encodeURIComponent(q)}`;
-  });
+let recognition = null;
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  // Mic button — voice input for the symptom search box
-  const micBtn = document.getElementById("micBtn");
-  const micStatus = document.getElementById("micStatus");
-  const searchInput = document.getElementById("searchInput");
+if (SpeechRecognitionAPI) {
+  recognition = new SpeechRecognitionAPI();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 3;
+
+  recognition.onstart = () => {
+    micBtn.classList.add("listening");
+    statusEl.textContent = "వింటున్నాను... మాట్లాడండి 🎧";
+  };
+
+  recognition.onerror = (e) => {
+    micBtn.classList.remove("listening");
+    statusEl.textContent = "క్షమించండి, వినడంలో సమస్య వచ్చింది. మళ్ళీ ప్రయత్నించండి.";
+  };
+
+  recognition.onend = () => {
+    micBtn.classList.remove("listening");
+  };
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    textInput.value = transcript;
+    statusEl.textContent = "మీరు చెప్పింది: “" + transcript + "”";
+    processInput(transcript);
+  };
 
   micBtn.addEventListener("click", () => {
-    micStatus.textContent = t("listening");
-    micStatus.style.display = "block";
-    micBtn.classList.add("listening");
-
-    startVoiceInput(
-      (transcript) => {
-        searchInput.value = transcript;
-        micStatus.style.display = "none";
-        micBtn.classList.remove("listening");
-        updateLanguageFromInput(transcript);
-        window.location.href = `symptoms.html?q=${encodeURIComponent(transcript)}`;
-      },
-      (isListening) => {
-        if(!isListening){
-          micBtn.classList.remove("listening");
-          micStatus.style.display = "none";
-        }
-      }
-    );
+    recognition.lang = recognitionLang;
+    try {
+      recognition.start();
+    } catch (e) {
+      /* ఇప్పటికే వింటున్నట్టయితే విస్మరించండి */
+    }
   });
+} else {
+  statusEl.textContent = "మీ బ్రౌజర్‌లో వాయిస్ ఫీచర్ లేదు — దయచేసి కింద టైప్ చేయండి.";
+  micBtn.disabled = true;
+}
 
-  // Camera / Gallery capture (stored for the session; no AI analysis — see media.js)
-  const photoPreview = document.getElementById("photoPreview");
-  const photoNote = document.getElementById("photoNote");
+askBtn.addEventListener("click", () => {
+  const val = textInput.value.trim();
+  if (val) processInput(val);
+});
 
-  function onPhotoStored(){
-    photoNote.style.display = "block";
+textInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    const val = textInput.value.trim();
+    if (val) processInput(val);
+  }
+});
+
+function processInput(userText) {
+  const detectedIds = detectSymptoms(userText, SYMPTOMS, 0.6);
+
+  if (detectedIds.length === 0) {
+    detectedBox.innerHTML = "";
+    resultsEl.innerHTML =
+      '<p class="status">క్షమించండి, మీ లక్షణాలు అర్థం కాలేదు. దయచేసి “జ్వరం”, “తలనొప్పి”, “దగ్గు” లాంటి పదాలతో మళ్ళీ చెప్పండి.</p>';
+    speakTelugu("క్షమించండి, అర్థం కాలేదు, మళ్ళీ చెప్పండి");
+    return;
   }
 
-  document.getElementById("cameraInput").addEventListener("change", (e) => {
-    handleImageFile(e.target.files[0], photoPreview, onPhotoStored);
-  });
-  document.getElementById("galleryInput").addEventListener("change", (e) => {
-    handleImageFile(e.target.files[0], photoPreview, onPhotoStored);
-  });
+  const detectedLabels = detectedIds.map(
+    (id) => SYMPTOMS.find((s) => s.id === id).label
+  );
+  detectedBox.innerHTML =
+    "గుర్తించిన లక్షణాలు: " +
+    detectedLabels.map((l) => `<span class="chip">${l}</span>`).join(" ");
 
-  // Translate the static button labels into the detected session language
-  document.getElementById("takePhotoLabel").textContent = t("takePhoto");
-  document.getElementById("uploadGalleryLabel").textContent = t("uploadGallery");
-  document.querySelector(".a11y-toggle").title = t("highContrast");
+  const diseases = predictDiseases(detectedIds, DISEASE_RULES);
+  renderResults(diseases);
 
-  // Page narration: the very first prompt of the whole experience
-  narratePage(t("welcome"));
-});
+  if (diseases.length > 0) {
+    speakTelugu("మీ లక్షణాల ఆధారంగా అనుమానిత వ్యాధులను క్రింద చూపించాను");
+  } else {
+    speakTelugu("మీ లక్షణాలు నమోదు చేసుకున్నాను, కానీ ఖచ్చితమైన అంచనా కుదరలేదు, వైద్యుడిని సంప్రదించండి");
+  }
+}
+
+function renderResults(diseases) {
+  if (diseases.length === 0) {
+    resultsEl.innerHTML =
+      '<p class="status">మీ లక్షణాలు నమోదయ్యాయి, కానీ ఖచ్చితమైన అంచనా కుదరలేదు — దయచేసి వైద్యుడిని సంప్రదించండి.</p>';
+    return;
+  }
+
+  resultsEl.innerHTML =
+    "<h2>అనుమానిత వ్యాధులు</h2>" +
+    diseases
+      .map((d) => {
+        const urgent = d.disease.includes("గుండె") ? "urgent" : "";
+        return `
+        <div class="card ${urgent}">
+          <h3>${d.disease}</h3>
+          <p><strong>సలహా:</strong> ${d.advice}</p>
+          <p class="see-doctor">${d.seeDoctor}</p>
+          <table class="med-table">
+            <thead>
+              <tr><th>Condition</th><th>Medicine</th><th>Dosage</th><th>Duration</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>${d.table.condition}</td>
+                <td>${d.table.medicine}</td>
+                <td>${d.table.dosage}</td>
+                <td>${d.table.duration}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>`;
+      })
+      .join("");
+}

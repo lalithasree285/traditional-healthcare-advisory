@@ -1,70 +1,55 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="te">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Traditional Healthcare Advisory</title>
-<link rel="icon" href="assets/logo.svg">
-<link rel="stylesheet" href="css/style.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>తెలుగు లక్షణాల చెకర్ | Symptom Checker</title>
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <div class="topbar">
-    <div class="brand">
-      <img src="assets/logo.svg" alt="logo">
-      <div>Traditional Healthcare Advisory
-        <small>Ayurveda • Homeopathy • Wellness</small>
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <button class="a11y-toggle no-print" onclick="toggleA11y()" aria-label="Toggle high contrast mode" title="High contrast">🌓</button>
-      <div class="nav-user" id="navUser"></div>
-    </div>
-  </div>
+<header>
+  <h1>🩺 లక్షణాల ఆధారంగా వ్యాధి అంచనా</h1>
+  <nav>
+    <a href="index.html">హోమ్</a>
+    <a href="about.html">మా గురించి</a>
+  </nav>
+</header>
 
-  <main>
-    <section class="hero">
-      <h1>Traditional Healthcare Advisory</h1>
-      <p class="tagline">Search a symptom, discover likely conditions, and get Ayurvedic & Homeopathic guidance.</p>
-      <span class="greeting" id="greeting"></span>
-    </section>
+<main>
+  <section class="mic-section">
+    <p class="prompt" id="promptText">దయచేసి మీ లక్షణాలు చెప్పండి</p>
 
-    <div class="chip-row" id="chipRow"></div>
+    <button id="micBtn" class="mic-btn" title="మాట్లాడటానికి నొక్కండి">🎤</button>
+    <div class="status" id="status">మైక్ నొక్కి మీ లక్షణాలు తెలుగులో చెప్పండి</div>
 
-    <div class="search-wrap">
-      <form class="search-box" id="searchForm">
-        <input type="text" id="searchInput" placeholder="Type a symptom e.g. headache, stomach pain, skin rash...">
-        <button type="button" class="mic-btn" id="micBtn" aria-label="Speak your symptom">🎙️</button>
-        <button type="submit">Search</button>
-      </form>
-      <div class="mic-status" id="micStatus" style="display:none;"></div>
+    <!-- హోమ్ పేజీలో మాత్రమే: తెలుగు / English వాయిస్ మార్చుకునే బటన్ -->
+    <div style="margin-top:10px;">
+      <button id="langToggle" class="text-fallback button" style="background:#e2e8f0;color:#1f2937;border:none;padding:6px 14px;border-radius:8px;cursor:pointer;">
+        🎙️ తెలుగు (English కి మార్చండి)
+      </button>
     </div>
 
-    <div class="camera-row no-print">
-      <label class="btn-secondary camera-btn">
-        📷 <span id="takePhotoLabel">Take Photo</span>
-        <input type="file" accept="image/*" capture="environment" id="cameraInput" hidden>
-      </label>
-      <label class="btn-secondary camera-btn">
-        🖼️ <span id="uploadGalleryLabel">Upload from Gallery</span>
-        <input type="file" accept="image/*" id="galleryInput" hidden>
-      </label>
+    <div class="text-fallback">
+      <input type="text" id="textInput" placeholder="లేదా ఇక్కడ తెలుగులో టైప్ చేయండి (ఉదా: జ్వరం, దగ్గు)" />
+      <button id="askBtn">సమర్పించండి</button>
     </div>
-    <img id="photoPreview" alt="Selected photo preview" style="display:none;">
-    <p class="photo-note no-print" id="photoNote" style="display:none;">
-      Photo saved for this visit. Image-based condition analysis needs a paid AI vision service and isn't included in this free build.
-    </p>
-  </main>
 
-  <footer>
-    Educational information only — not a medical diagnosis. Always consult a qualified practitioner.
-  </footer>
+    <div class="detected-box" id="detectedBox"></div>
+  </section>
 
-  <script src="js/translations.js"></script>
-  <script src="js/voice.js"></script>
-  <script src="js/media.js"></script>
-  <script src="js/data.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/app.js"></script>
+  <section class="results" id="results"></section>
+
+  <p class="disclaimer">
+    ⚠️ ఇది కేవలం ప్రాథమిక అవగాహన కోసం మాత్రమే. ఇది వైద్యుడి నిర్ధారణకు ప్రత్యామ్నాయం కాదు.
+    దయచేసి ఖచ్చితమైన చికిత్స కోసం అర్హత కలిగిన వైద్యుడిని సంప్రదించండి.
+  </p>
+</main>
+
+<footer>© 2026 తెలుగు ఆరోగ్య సహాయకుడు</footer>
+
+<script src="symptomsData.js"></script>
+<script src="fuzzyMatch.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
